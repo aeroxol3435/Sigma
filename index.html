@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Free Random Populated Place Generator</title>
+    <style>
+        body {
+            background:#0f0f0f;
+            color:white;
+            font-family:Arial;
+            text-align:center;
+            padding:40px;
+        }
+        button {
+            padding:12px 25px;
+            font-size:16px;
+            cursor:pointer;
+            border:none;
+            border-radius:8px;
+            background:#00c3ff;
+            color:black;
+        }
+        pre {
+            margin-top:30px;
+            background:#1e1e1e;
+            padding:20px;
+            border-radius:10px;
+            text-align:left;
+            display:inline-block;
+            max-width:90%;
+            overflow:auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Random Populated Location (Free)</h1>
+<button onclick="generate()">Generate</button>
+
+<pre id="output">Click generate...</pre>
+
+<script>
+
+function randomLat() {
+    return (Math.random() * 120 - 60); // avoid extreme poles
+}
+
+function randomLng() {
+    return (Math.random() * 360 - 180);
+}
+
+async function generate() {
+    document.getElementById("output").textContent = "Searching...";
+
+    while(true) {
+
+        let lat = randomLat();
+        let lng = randomLng();
+
+        let response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+        );
+
+        let data = await response.json();
+
+        if(!data.address) continue;
+
+        let addr = data.address;
+
+        // Only allow populated places
+        if(!(addr.city || addr.town || addr.village)) continue;
+
+        let placeName = (addr.city || addr.town || addr.village) +
+                        (addr.country ? ", " + addr.country : "");
+
+        // Avoid unwanted areas
+        let bannedWords = ["Desert","Ocean","Sea","Forest","Ice","Antarctica","Greenland"];
+
+        if(bannedWords.some(word => placeName.includes(word))) continue;
+
+        // Static map image (OpenStreetMap)
+        let imageUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=14&size=600x400&maptype=mapnik`;
+
+        let outputString = `name="${placeName}", png="${imageUrl}"`;
+
+        document.getElementById("output").textContent = outputString;
+        break;
+    }
+}
+
+</script>
+
+</body>
+</html>
